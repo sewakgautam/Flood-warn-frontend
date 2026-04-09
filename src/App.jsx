@@ -12,6 +12,11 @@ import AdminPage from './pages/AdminPage.jsx';
 import PublicMapPage from './pages/PublicMapPage.jsx';
 import UnsubscribePage from './pages/UnsubscribePage.jsx';
 
+function RedirectToStation() {
+  const { id } = useParams();
+  return <Navigate to={`/dashboard/stations/${id}`} replace />;
+}
+
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -41,6 +46,7 @@ export default function App() {
 
           {/* Legacy redirects */}
           <Route path="/stations" element={<Navigate to="/dashboard/stations" replace />} />
+          <Route path="/stations/:id" element={<RedirectToStation />} />
           <Route path="/alerts" element={<Navigate to="/dashboard/alerts" replace />} />
         </Routes>
       </BrowserRouter>
