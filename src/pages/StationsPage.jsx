@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { Radio, Plus, Wifi, WifiOff, X, ChevronRight } from 'lucide-react';
+import { Radio, Plus, Wifi, WifiOff, X, ChevronRight, Search } from 'lucide-react';
 
 function AddStationModal({ onClose, onCreated }) {
   const [form, setForm] = useState({ name: '', location: '', latitude: '', longitude: '' });
@@ -59,10 +59,21 @@ export default function StationsPage() {
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     api.getStations().then(setStations).catch(console.error).finally(() => setLoading(false));
   }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return stations;
+    return stations.filter(s =>
+      s.name?.toLowerCase().includes(q) ||
+      s.location?.toLowerCase().includes(q) ||
+      s.id?.toLowerCase().includes(q)
+    );
+  }, [stations, query]);
 
   return (
     <div style={{ padding: '28px 32px', maxWidth: 900 }}>
@@ -78,11 +89,28 @@ export default function StationsPage() {
         </button>
       </div>
 
+      {/* Search */}
+      <div style={{ position: 'relative', marginBottom: 20 }}>
+        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        <input
+          className="input"
+          placeholder="Search by name, location or ID…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          style={{ paddingLeft: 36, width: '100%', boxSizing: 'border-box' }}
+        />
+        {query && (
+          <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 2 }}>
+            <X size={14} />
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div style={{ color: 'var(--text-muted)', padding: 40, textAlign: 'center' }}>Loading…</div>
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
-          {stations.map(s => (
+          {filtered.map(s => (
             <Link key={s.id} to={`/stations/${s.id}`} style={{ textDecoration: 'none' }}>
               <div className="card" style={{
                 display: 'flex', alignItems: 'center', gap: 16,
@@ -125,13 +153,19 @@ export default function StationsPage() {
               </div>
             </Link>
           ))}
-          {stations.length === 0 && (
+          {filtered.length === 0 && (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-muted)' }}>
               <Radio size={32} style={{ marginBottom: 12, opacity: 0.3 }} />
-              <p>No stations registered yet.</p>
-              <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setShowAdd(true)}>
-                <Plus size={14} /> Add your first station
-              </button>
+              {query ? (
+                <p>No stations match "<strong>{query}</strong>".</p>
+              ) : (
+                <>
+                  <p>No stations registered yet.</p>
+                  <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setShowAdd(true)}>
+                    <Plus size={14} /> Add your first station
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
