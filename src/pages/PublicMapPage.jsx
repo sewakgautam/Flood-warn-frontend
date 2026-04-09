@@ -2,7 +2,121 @@ import { useEffect, useState, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Link } from 'react-router-dom';
 import { publicApi } from '../lib/api';
+
+function MapNav() {
+  return (
+    <nav style={{
+      position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1001,
+      background: 'rgba(10,15,28,0.95)', backdropFilter: 'blur(10px)',
+      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '0 20px', height: 48,
+    }}>
+      <Link to="/" style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        textDecoration: 'none', color: '#f1f5f9',
+      }}>
+        <span style={{ fontSize: 16 }}>🌊</span>
+        <span style={{ fontWeight: 700, fontSize: 13 }}>
+          FloodWatch <span style={{ color: '#00d4ff' }}>Nepal</span>
+        </span>
+      </Link>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <span style={{ fontSize: 11, color: '#475569' }}>Click a station to subscribe for alerts</span>
+        <Link to="/login" style={{
+          background: '#00d4ff18', border: '1px solid #00d4ff33',
+          color: '#00d4ff', fontSize: 12, fontWeight: 600,
+          textDecoration: 'none', padding: '5px 12px', borderRadius: 6,
+        }}>
+          Operator Login
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+function SubscribeForm({ stationId, stationName, onClose }) {
+  const [email, setEmail] = useState('');
+  const [severity, setSeverity] = useState('WARNING');
+  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [msg, setMsg] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setStatus('loading');
+    try {
+      const res = await publicApi.subscribe({ email, stationId, severity });
+      if (res.error) throw new Error(res.error);
+      setStatus('done');
+      setMsg(res.message || 'Subscribed! Check your email.');
+    } catch (err) {
+      setStatus('error');
+      setMsg(err.message || 'Failed to subscribe');
+    }
+  };
+
+  if (status === 'done') {
+    return (
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: 22, marginBottom: 6 }}>✓</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', marginBottom: 4 }}>Subscribed!</div>
+        <div style={{ fontSize: 11, color: '#64748b' }}>{msg}</div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.5px', marginBottom: 8 }}>
+        GET ALERTS FOR {stationName.toUpperCase()}
+      </div>
+      <input
+        type="email"
+        required
+        placeholder="your@email.com"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        style={{
+          width: '100%', padding: '7px 10px', borderRadius: 7, fontSize: 12,
+          border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a',
+          marginBottom: 8, boxSizing: 'border-box',
+        }}
+      />
+      <select
+        value={severity}
+        onChange={e => setSeverity(e.target.value)}
+        style={{
+          width: '100%', padding: '7px 10px', borderRadius: 7, fontSize: 12,
+          border: '1px solid #cbd5e1', background: '#f8fafc', color: '#0f172a',
+          marginBottom: 10, boxSizing: 'border-box',
+        }}
+      >
+        <option value="WATCH">Watch level and above</option>
+        <option value="WARNING">Warning level and above</option>
+        <option value="CRITICAL">Critical level only</option>
+      </select>
+      {status === 'error' && (
+        <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 8 }}>{msg}</div>
+      )}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button type="submit" disabled={status === 'loading'} style={{
+          flex: 1, padding: '8px', borderRadius: 7, border: 'none',
+          background: '#0ea5e9', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+        }}>
+          {status === 'loading' ? 'Subscribing…' : 'Subscribe'}
+        </button>
+        <button type="button" onClick={onClose} style={{
+          padding: '8px 12px', borderRadius: 7, border: '1px solid #e2e8f0',
+          background: '#fff', fontSize: 12, color: '#64748b', cursor: 'pointer',
+        }}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+}
 
 const RISK_COLOR = {
   NORMAL:   { hex: '#22c55e', bg: '#052e16', label: 'Normal'   },
@@ -108,6 +222,7 @@ function makeIcon(station) {
 
 // ── Popup detail card ─────────────────────────────────────────────────────────
 function DetailPopup({ s }) {
+  const [showSubscribe, setShowSubscribe] = useState(false);
   const rc = riskOf(s);
   const level = s.riverLevel?.levelM;
   const thresholds = s.thresholds;
@@ -207,6 +322,26 @@ function DetailPopup({ s }) {
           WARNING — Water levels elevated.
         </div>
       )}
+
+      {/* Subscribe */}
+      {!showSubscribe ? (
+        <button
+          onClick={() => setShowSubscribe(true)}
+          style={{
+            marginTop: 10, width: '100%', padding: '8px', borderRadius: 7,
+            border: '1px solid #0ea5e944', background: '#0ea5e912',
+            color: '#0ea5e9', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          🔔 Get Alerts for this Station
+        </button>
+      ) : (
+        <SubscribeForm
+          stationId={s.id}
+          stationName={s.name}
+          onClose={() => setShowSubscribe(false)}
+        />
+      )}
     </div>
   );
 }
@@ -219,11 +354,10 @@ function StatsBar({ stations, updatedAt, onRefresh, loading }) {
 
   return (
     <div style={{
-      position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1000,
       background: 'rgba(10,15,28,0.95)', backdropFilter: 'blur(10px)',
       borderBottom: '1px solid rgba(255,255,255,0.07)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '10px 16px', gap: 12, flexWrap: 'wrap',
+      padding: '8px 16px', gap: 12, flexWrap: 'wrap',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ fontSize: 18 }}>🌊</span>
@@ -318,8 +452,11 @@ export default function PublicMapPage() {
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', background: '#0f172a', fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Header overlaid on map */}
-      <StatsBar stations={stations} updatedAt={updatedAt} onRefresh={fetchData} loading={loading} />
+      <MapNav />
+      {/* Stats bar below nav */}
+      <div style={{ position: 'absolute', top: 48, left: 0, right: 0, zIndex: 1000 }}>
+        <StatsBar stations={stations} updatedAt={updatedAt} onRefresh={fetchData} loading={loading} />
+      </div>
 
       {error && (
         <div style={{

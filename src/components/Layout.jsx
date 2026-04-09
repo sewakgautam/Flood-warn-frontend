@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 
 const NAV = [
-  { to: '/',         label: 'Dashboard',   icon: LayoutDashboard, end: true },
-  { to: '/stations', label: 'Stations',    icon: Radio },
-  { to: '/alerts',   label: 'Alerts',      icon: Bell },
-  { to: '/submit',   label: 'Submit Data', icon: Upload },
-  { to: '/admin',    label: 'Admin',       icon: Settings },
+  { to: '/dashboard',         label: 'Dashboard',   icon: LayoutDashboard, end: true },
+  { to: '/dashboard/stations', label: 'Stations',    icon: Radio },
+  { to: '/dashboard/alerts',   label: 'Alerts',      icon: Bell },
+  { to: '/dashboard/submit',   label: 'Submit Data', icon: Upload },
+  { to: '/dashboard/admin',    label: 'Admin',       icon: Settings },
 ];
 
 export default function Layout() {

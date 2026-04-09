@@ -70,6 +70,19 @@ export const publicApi = {
       if (!r.ok) throw new Error(r.statusText);
       return r.json();
     }),
+  getStations: () =>
+    fetch(`${BASE}/public/stations`).then((r) => {
+      if (!r.ok) throw new Error(r.statusText);
+      return r.json();
+    }),
+  subscribe: (data) =>
+    fetch(`${BASE}/public/subscribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }).then((r) => r.json()),
+  unsubscribe: (token) =>
+    fetch(`${BASE}/public/unsubscribe/${token}`, { method: 'DELETE' }).then((r) => r.json()),
 };
 
 // Admin
