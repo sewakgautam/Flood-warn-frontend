@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { publicApi } from '../lib/api';
+import LanguageToggle from '../components/LanguageToggle.jsx';
 
 function Navbar() {
+  const { t } = useTranslation();
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -23,7 +26,8 @@ function Navbar() {
           FloodWatch <span style={{ color: '#00d4ff' }}>Nepal</span>
         </span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <LanguageToggle variant="light" />
         <Link to="/map" style={{
           color: '#94a3b8', fontSize: 13, fontWeight: 500,
           textDecoration: 'none', padding: '6px 14px', borderRadius: 7,
@@ -32,14 +36,14 @@ function Navbar() {
           onMouseEnter={e => e.target.style.color = '#f1f5f9'}
           onMouseLeave={e => e.target.style.color = '#94a3b8'}
         >
-          Live Map
+          {t('nav.liveMap')}
         </Link>
         <Link to="/login" style={{
           background: '#00d4ff18', border: '1px solid #00d4ff44',
           color: '#00d4ff', fontSize: 13, fontWeight: 600,
           textDecoration: 'none', padding: '6px 16px', borderRadius: 8,
         }}>
-          Operator Login
+          {t('nav.operatorLogin')}
         </Link>
       </div>
     </nav>
@@ -78,6 +82,7 @@ function FeatureCard({ icon, title, desc }) {
 
 export default function LandingPage() {
   const [stats, setStats] = useState(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     publicApi.getMapData()
@@ -90,6 +95,12 @@ export default function LandingPage() {
       })
       .catch(() => {});
   }, []);
+
+  const steps = [
+    { n: '1', title: t('howto.step1title'), desc: t('howto.step1desc') },
+    { n: '2', title: t('howto.step2title'), desc: t('howto.step2desc') },
+    { n: '3', title: t('howto.step3title'), desc: t('howto.step3desc') },
+  ];
 
   return (
     <div style={{
@@ -108,21 +119,20 @@ export default function LandingPage() {
           color: '#00d4ff', fontSize: 11, fontWeight: 700, letterSpacing: '2px',
           padding: '5px 14px', borderRadius: 99, marginBottom: 24,
         }}>
-          LIVE · NEPAL FLOOD EARLY WARNING
+          {t('hero.badge')}
         </div>
         <h1 style={{
           fontSize: 'clamp(32px, 5vw, 54px)', fontWeight: 800, lineHeight: 1.1,
           color: '#f1f5f9', margin: '0 0 20px', letterSpacing: '-1.5px',
         }}>
-          Real-Time Flood Monitoring<br />
-          <span style={{ color: '#00d4ff' }}>Across Nepal</span>
+          {t('hero.title1')}<br />
+          <span style={{ color: '#00d4ff' }}>{t('hero.title2')}</span>
         </h1>
         <p style={{
           fontSize: 17, color: '#94a3b8', lineHeight: 1.7,
           maxWidth: 600, margin: '0 auto 36px',
         }}>
-          Live river levels and rainfall data from {stats?.total ?? '295'}+ monitoring stations.
-          Subscribe to get email alerts when your nearby river reaches warning levels.
+          {t('hero.subtitle', { count: stats?.total ?? '295' })}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/map" style={{
@@ -130,14 +140,14 @@ export default function LandingPage() {
             fontSize: 14, padding: '12px 28px', borderRadius: 10,
             textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8,
           }}>
-            View Live Map →
+            {t('hero.viewMap')}
           </Link>
           <Link to="/map#subscribe" style={{
             background: '#1e293b', border: '1px solid #334155', color: '#94a3b8',
             fontWeight: 600, fontSize: 14, padding: '12px 28px', borderRadius: 10,
             textDecoration: 'none',
           }}>
-            Get Email Alerts
+            {t('hero.getAlerts')}
           </Link>
         </div>
       </section>
@@ -145,10 +155,10 @@ export default function LandingPage() {
       {/* Live stats */}
       <section style={{ padding: '0 32px 80px', maxWidth: 900, margin: '0 auto' }}>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <StatCard label="MONITORING STATIONS" value={stats?.total} sub="across Nepal" color="#00d4ff" />
-          <StatCard label="ONLINE NOW" value={stats?.online} sub="reporting live" color="#22c55e" />
-          <StatCard label="ACTIVE ALERTS" value={stats?.alerts} sub="above warning level" color="#f97316" />
-          <StatCard label="CRITICAL" value={stats?.critical} sub="immediate attention" color="#ef4444" />
+          <StatCard label={t('stats.monitoringStations')} value={stats?.total} sub={t('stats.acrossNepal')} color="#00d4ff" />
+          <StatCard label={t('stats.onlineNow')} value={stats?.online} sub={t('stats.reportingLive')} color="#22c55e" />
+          <StatCard label={t('stats.activeAlerts')} value={stats?.alerts} sub={t('stats.aboveWarning')} color="#f97316" />
+          <StatCard label={t('stats.critical')} value={stats?.critical} sub={t('stats.immediateAttention')} color="#ef4444" />
         </div>
       </section>
 
@@ -156,33 +166,17 @@ export default function LandingPage() {
       <section style={{ padding: '0 32px 80px', maxWidth: 1000, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '2px', marginBottom: 10 }}>
-            FEATURES
+            {t('features.sectionLabel')}
           </div>
           <h2 style={{ fontSize: 28, fontWeight: 800, color: '#f1f5f9', margin: 0, letterSpacing: '-0.5px' }}>
-            Everything you need to stay safe
+            {t('features.sectionTitle')}
           </h2>
         </div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <FeatureCard
-            icon="📡"
-            title="Real-Time River Levels"
-            desc="Water level data from 295+ DHM monitoring stations updated every 30 minutes. Track river height against warning and danger thresholds."
-          />
-          <FeatureCard
-            icon="🌧️"
-            title="Rainfall Monitoring"
-            desc="6-hour accumulated rainfall readings from stations across all major river basins in Nepal including Koshi, Gandaki, and Karnali."
-          />
-          <FeatureCard
-            icon="📧"
-            title="Email Alert Subscriptions"
-            desc="Subscribe to any station and receive an email the moment water levels reach Watch, Warning, or Critical thresholds. No account needed."
-          />
-          <FeatureCard
-            icon="🗺️"
-            title="Interactive Map"
-            desc="Color-coded live map showing risk levels across Nepal. Click any station for detailed readings, charts, and historical data."
-          />
+          <FeatureCard icon="📡" title={t('features.riverLevels')} desc={t('features.riverLevelsDesc')} />
+          <FeatureCard icon="🌧️" title={t('features.rainfall')} desc={t('features.rainfallDesc')} />
+          <FeatureCard icon="📧" title={t('features.emailAlerts')} desc={t('features.emailAlertsDesc')} />
+          <FeatureCard icon="🗺️" title={t('features.map')} desc={t('features.mapDesc')} />
         </div>
       </section>
 
@@ -191,17 +185,13 @@ export default function LandingPage() {
         padding: '60px 32px 80px', maxWidth: 800, margin: '0 auto', textAlign: 'center',
       }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: '#00d4ff', letterSpacing: '2px', marginBottom: 10 }}>
-          HOW TO GET ALERTS
+          {t('howto.sectionLabel')}
         </div>
         <h2 style={{ fontSize: 24, fontWeight: 800, color: '#f1f5f9', margin: '0 0 40px', letterSpacing: '-0.5px' }}>
-          3 steps, no account required
+          {t('howto.sectionTitle')}
         </h2>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {[
-            { n: '1', title: 'Open the Map', desc: 'Go to the live map and find the river station nearest to you.' },
-            { n: '2', title: 'Click Get Alerts', desc: 'Click on any station marker and press the "Get Alerts" button.' },
-            { n: '3', title: 'Enter Your Email', desc: 'Enter your email and choose your alert threshold. Done.' },
-          ].map(step => (
+          {steps.map(step => (
             <div key={step.n} style={{
               flex: '1 1 200px', background: '#1e293b', border: '1px solid #334155',
               borderRadius: 12, padding: '24px',
@@ -223,7 +213,7 @@ export default function LandingPage() {
             fontSize: 14, padding: '13px 32px', borderRadius: 10,
             textDecoration: 'none',
           }}>
-            Open Live Map →
+            {t('howto.openMap')}
           </Link>
         </div>
       </section>
@@ -235,11 +225,11 @@ export default function LandingPage() {
         flexWrap: 'wrap', gap: 12,
       }}>
         <div style={{ fontSize: 12, color: '#475569' }}>
-          FloodWatch Nepal · Data from DHM (Department of Hydrology and Meteorology)
+          {t('footer.credit')}
         </div>
         <div style={{ display: 'flex', gap: 20 }}>
-          <Link to="/map" style={{ fontSize: 12, color: '#475569', textDecoration: 'none' }}>Live Map</Link>
-          <Link to="/login" style={{ fontSize: 12, color: '#475569', textDecoration: 'none' }}>Operator Login</Link>
+          <Link to="/map" style={{ fontSize: 12, color: '#475569', textDecoration: 'none' }}>{t('footer.liveMap')}</Link>
+          <Link to="/login" style={{ fontSize: 12, color: '#475569', textDecoration: 'none' }}>{t('footer.operatorLogin')}</Link>
         </div>
       </footer>
     </div>

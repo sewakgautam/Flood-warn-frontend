@@ -1,21 +1,24 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard, Radio, Bell, Upload, LogOut, Droplets, Settings
 } from 'lucide-react';
-
-const NAV = [
-  { to: '/dashboard',         label: 'Dashboard',   icon: LayoutDashboard, end: true },
-  { to: '/dashboard/stations', label: 'Stations',    icon: Radio },
-  { to: '/dashboard/alerts',   label: 'Alerts',      icon: Bell },
-  { to: '/dashboard/submit',   label: 'Submit Data', icon: Upload },
-  { to: '/dashboard/admin',    label: 'Admin',       icon: Settings },
-];
+import LanguageToggle from './LanguageToggle.jsx';
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const handleLogout = () => { logout(); navigate('/login'); };
+
+  const NAV = [
+    { to: '/dashboard',          label: t('sidebar.dashboard'),   icon: LayoutDashboard, end: true },
+    { to: '/dashboard/stations', label: t('sidebar.stations'),    icon: Radio },
+    { to: '/dashboard/alerts',   label: t('sidebar.alerts'),      icon: Bell },
+    { to: '/dashboard/submit',   label: t('sidebar.submitData'),  icon: Upload },
+    { to: '/dashboard/admin',    label: t('sidebar.admin'),       icon: Settings },
+  ];
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -25,15 +28,16 @@ export default function Layout() {
         borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
       }}>
-        {/* Logo */}
-        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* Logo + language toggle */}
+        <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Droplets size={18} color="var(--bg)" strokeWidth={2.5} />
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13 }}>FloodWatch</div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>EARLY WARNING</div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>{t('sidebar.earlyWarning')}</div>
           </div>
+          <LanguageToggle variant="dark" />
         </div>
 
         {/* Nav */}
@@ -66,7 +70,7 @@ export default function Layout() {
             <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{user?.role}</div>
           </div>
-          <button onClick={handleLogout} className="btn btn-ghost" style={{ padding: '4px 6px', border: 'none' }} title="Logout">
+          <button onClick={handleLogout} className="btn btn-ghost" style={{ padding: '4px 6px', border: 'none' }} title={t('sidebar.logout')}>
             <LogOut size={14} />
           </button>
         </div>

@@ -1,11 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { publicApi } from '../lib/api';
+import LanguageToggle from '../components/LanguageToggle.jsx';
 
 function MapNav() {
+  const { t } = useTranslation();
   return (
     <nav style={{
       position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1001,
@@ -23,14 +26,15 @@ function MapNav() {
           FloodWatch <span style={{ color: '#00d4ff' }}>Nepal</span>
         </span>
       </Link>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span style={{ fontSize: 11, color: '#475569' }}>Click a station to subscribe for alerts</span>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <LanguageToggle variant="light" />
+        <span style={{ fontSize: 11, color: '#475569' }}>{t('map.clickStation')}</span>
         <Link to="/login" style={{
           background: '#00d4ff18', border: '1px solid #00d4ff33',
           color: '#00d4ff', fontSize: 12, fontWeight: 600,
           textDecoration: 'none', padding: '5px 12px', borderRadius: 6,
         }}>
-          Operator Login
+          {t('nav.operatorLogin')}
         </Link>
       </div>
     </nav>
@@ -40,8 +44,9 @@ function MapNav() {
 function SubscribeForm({ stationId, stationName, onClose }) {
   const [email, setEmail] = useState('');
   const [severity, setSeverity] = useState('WARNING');
-  const [status, setStatus] = useState('idle'); // idle | loading | done | error
+  const [status, setStatus] = useState('idle');
   const [msg, setMsg] = useState('');
+  const { t } = useTranslation();
 
   const submit = async (e) => {
     e.preventDefault();
@@ -50,7 +55,7 @@ function SubscribeForm({ stationId, stationName, onClose }) {
       const res = await publicApi.subscribe({ email, stationId, severity });
       if (res.error) throw new Error(res.error);
       setStatus('done');
-      setMsg(res.message || 'Subscribed! Check your email.');
+      setMsg(res.message || t('subscribe.checkEmail'));
     } catch (err) {
       setStatus('error');
       setMsg(err.message || 'Failed to subscribe');
@@ -61,7 +66,7 @@ function SubscribeForm({ stationId, stationName, onClose }) {
     return (
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 22, marginBottom: 6 }}>✓</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', marginBottom: 4 }}>Subscribed!</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', marginBottom: 4 }}>{t('subscribe.subscribed')}</div>
         <div style={{ fontSize: 11, color: '#64748b' }}>{msg}</div>
       </div>
     );
@@ -70,12 +75,12 @@ function SubscribeForm({ stationId, stationName, onClose }) {
   return (
     <form onSubmit={submit} style={{ marginTop: 10 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', letterSpacing: '0.5px', marginBottom: 8 }}>
-        GET ALERTS FOR {stationName.toUpperCase()}
+        {t('subscribe.title', { station: stationName.toUpperCase() })}
       </div>
       <input
         type="email"
         required
-        placeholder="your@email.com"
+        placeholder={t('subscribe.emailPlaceholder')}
         value={email}
         onChange={e => setEmail(e.target.value)}
         style={{
@@ -93,9 +98,9 @@ function SubscribeForm({ stationId, stationName, onClose }) {
           marginBottom: 10, boxSizing: 'border-box',
         }}
       >
-        <option value="WATCH">Watch level and above</option>
-        <option value="WARNING">Warning level and above</option>
-        <option value="CRITICAL">Critical level only</option>
+        <option value="WATCH">{t('subscribe.watchLevel')}</option>
+        <option value="WARNING">{t('subscribe.warningLevel')}</option>
+        <option value="CRITICAL">{t('subscribe.criticalLevel')}</option>
       </select>
       {status === 'error' && (
         <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 8 }}>{msg}</div>
@@ -105,13 +110,13 @@ function SubscribeForm({ stationId, stationName, onClose }) {
           flex: 1, padding: '8px', borderRadius: 7, border: 'none',
           background: '#0ea5e9', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer',
         }}>
-          {status === 'loading' ? 'Subscribing…' : 'Subscribe'}
+          {status === 'loading' ? t('subscribe.subscribing') : t('subscribe.subscribe')}
         </button>
         <button type="button" onClick={onClose} style={{
           padding: '8px 12px', borderRadius: 7, border: '1px solid #e2e8f0',
           background: '#fff', fontSize: 12, color: '#64748b', cursor: 'pointer',
         }}>
-          Cancel
+          {t('subscribe.cancel')}
         </button>
       </div>
     </form>
@@ -119,110 +124,50 @@ function SubscribeForm({ stationId, stationName, onClose }) {
 }
 
 const RISK_COLOR = {
-  NORMAL:   { hex: '#22c55e', bg: '#052e16', label: 'Normal'   },
-  WATCH:    { hex: '#eab308', bg: '#1c1a03', label: 'Watch'    },
-  WARNING:  { hex: '#f97316', bg: '#1c0a03', label: 'Warning'  },
-  CRITICAL: { hex: '#ef4444', bg: '#1f0303', label: 'Critical' },
+  NORMAL:   { hex: '#22c55e', bg: '#052e16', labelKey: 'risk.NORMAL'   },
+  WATCH:    { hex: '#eab308', bg: '#1c1a03', labelKey: 'risk.WATCH'    },
+  WARNING:  { hex: '#f97316', bg: '#1c0a03', labelKey: 'risk.WARNING'  },
+  CRITICAL: { hex: '#ef4444', bg: '#1f0303', labelKey: 'risk.CRITICAL' },
 };
 
 function riskOf(s) {
   return RISK_COLOR[s.risk] ?? RISK_COLOR.NORMAL;
 }
 
-// ── Custom DivIcon: shows water level pill + status dot ──────────────────────
-function makeIcon(station) {
+function makeIcon(station, riskLabels) {
   const rc = riskOf(station);
   const level = station.riverLevel?.levelM;
   const levelText = level != null ? `${level.toFixed(2)} m` : '— m';
   const isOffline = station.status === 'OFFLINE';
   const isCritical = station.risk === 'CRITICAL';
+  const label = isOffline ? (riskLabels['OFFLINE'] ?? 'Offline') : (riskLabels[station.risk] ?? rc.labelKey);
 
   const pulse = isCritical
     ? `<span style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:${rc.hex};opacity:0.5;animation:pulse 1.4s infinite;"></span>`
     : '';
 
   const html = `
-    <div style="
-      position: relative;
-      font-family: 'DM Sans', 'Space Mono', monospace;
-      user-select: none;
-    ">
+    <div style="position:relative;font-family:'DM Sans','Space Mono',monospace;user-select:none;">
       ${pulse}
-      <!-- Pin body -->
-      <div style="
-        background: ${rc.bg};
-        border: 2px solid ${rc.hex};
-        border-radius: 10px 10px 10px 2px;
-        padding: 5px 9px 4px;
-        min-width: 82px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.55);
-        backdrop-filter: blur(4px);
-      ">
-        <!-- Water level -->
-        <div style="
-          font-size: 15px;
-          font-weight: 700;
-          color: ${rc.hex};
-          letter-spacing: -0.3px;
-          line-height: 1;
-          margin-bottom: 3px;
-        ">${levelText}</div>
-        <!-- Station name (short) -->
-        <div style="
-          font-size: 9.5px;
-          color: rgba(255,255,255,0.65);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 96px;
-          line-height: 1.1;
-          margin-bottom: 3px;
-        ">${station.name}</div>
-        <!-- Status row -->
+      <div style="background:${rc.bg};border:2px solid ${rc.hex};border-radius:10px 10px 10px 2px;padding:5px 9px 4px;min-width:82px;box-shadow:0 2px 12px rgba(0,0,0,0.55);backdrop-filter:blur(4px);">
+        <div style="font-size:15px;font-weight:700;color:${rc.hex};letter-spacing:-0.3px;line-height:1;margin-bottom:3px;">${levelText}</div>
+        <div style="font-size:9.5px;color:rgba(255,255,255,0.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96px;line-height:1.1;margin-bottom:3px;">${station.name}</div>
         <div style="display:flex;align-items:center;gap:4px;">
-          <span style="
-            width: 6px; height: 6px; border-radius: 50%;
-            background: ${isOffline ? '#64748b' : rc.hex};
-            flex-shrink: 0;
-            display: inline-block;
-          "></span>
-          <span style="
-            font-size: 9px;
-            font-weight: 600;
-            color: ${isOffline ? '#64748b' : rc.hex};
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          ">${isOffline ? 'Offline' : rc.label}</span>
+          <span style="width:6px;height:6px;border-radius:50%;background:${isOffline ? '#64748b' : rc.hex};flex-shrink:0;display:inline-block;"></span>
+          <span style="font-size:9px;font-weight:600;color:${isOffline ? '#64748b' : rc.hex};text-transform:uppercase;letter-spacing:0.5px;">${label}</span>
         </div>
       </div>
-      <!-- Arrow tip -->
-      <div style="
-        width: 0; height: 0;
-        border-left: 5px solid transparent;
-        border-right: 0px solid transparent;
-        border-top: 7px solid ${rc.hex};
-        margin-left: 2px;
-      "></div>
+      <div style="width:0;height:0;border-left:5px solid transparent;border-right:0px solid transparent;border-top:7px solid ${rc.hex};margin-left:2px;"></div>
     </div>
-    <style>
-      @keyframes pulse {
-        0%,100% { transform: scale(1); opacity: 0.5; }
-        50%      { transform: scale(2.2); opacity: 0; }
-      }
-    </style>
+    <style>@keyframes pulse{0%,100%{transform:scale(1);opacity:0.5;}50%{transform:scale(2.2);opacity:0;}}</style>
   `;
 
-  return L.divIcon({
-    html,
-    className: '',
-    iconAnchor: [10, 0],
-    popupAnchor: [45, -10],
-  });
+  return L.divIcon({ html, className: '', iconAnchor: [10, 0], popupAnchor: [45, -10] });
 }
 
-// ── Popup detail card ─────────────────────────────────────────────────────────
 function DetailPopup({ s }) {
   const [showSubscribe, setShowSubscribe] = useState(false);
+  const { t } = useTranslation();
   const rc = riskOf(s);
   const level = s.riverLevel?.levelM;
   const thresholds = s.thresholds;
@@ -230,12 +175,10 @@ function DetailPopup({ s }) {
     ? Math.min((level / (thresholds.criticalRiver * 1.2)) * 100, 100)
     : 0;
 
-  let barColor = rc.hex;
-
   const lastSeen = s.lastSeenAt ? new Date(s.lastSeenAt) : null;
   const minutesAgo = lastSeen ? Math.floor((Date.now() - lastSeen) / 60000) : null;
   const freshness = minutesAgo == null
-    ? 'No data'
+    ? t('map.noData')
     : minutesAgo < 60
       ? `${minutesAgo}m ago`
       : minutesAgo < 1440
@@ -244,22 +187,20 @@ function DetailPopup({ s }) {
 
   return (
     <div style={{ fontFamily: 'DM Sans, sans-serif', width: 230, color: '#0f172a' }}>
-      {/* Header */}
       <div style={{ marginBottom: 10 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
           <strong style={{ fontSize: 13, lineHeight: 1.3, flex: 1 }}>{s.name}</strong>
           <span style={{
             flexShrink: 0, padding: '1px 7px', borderRadius: 20, fontSize: 10, fontWeight: 700,
             background: rc.hex + '22', color: rc.hex, border: `1px solid ${rc.hex}44`,
-          }}>{rc.label}</span>
+          }}>{t(rc.labelKey)}</span>
         </div>
         <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{s.location}</div>
       </div>
 
-      {/* Water level */}
       <div style={{ marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-          <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>Water Level</span>
+          <span style={{ fontSize: 11, color: '#475569', fontWeight: 600 }}>{t('map.waterLevel')}</span>
           <span style={{ fontSize: 22, fontWeight: 800, color: rc.hex, fontFamily: 'Space Mono, monospace', lineHeight: 1 }}>
             {level != null ? `${level.toFixed(2)}m` : '—'}
           </span>
@@ -267,7 +208,7 @@ function DetailPopup({ s }) {
         {level != null && thresholds && (
           <>
             <div style={{ background: '#e2e8f0', borderRadius: 4, height: 7, overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: barColor, borderRadius: 4 }} />
+              <div style={{ width: `${pct}%`, height: '100%', background: rc.hex, borderRadius: 4 }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#94a3b8', marginTop: 2 }}>
               <span>0m</span>
@@ -278,20 +219,18 @@ function DetailPopup({ s }) {
         )}
         {s.riverLevel?.flowRateCms != null && (
           <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
-            Flow rate: <strong>{s.riverLevel.flowRateCms.toFixed(1)} m³/s</strong>
+            {t('map.flowRate')} <strong>{s.riverLevel.flowRateCms.toFixed(1)} m³/s</strong>
           </div>
         )}
       </div>
 
-      {/* Rainfall */}
       <div style={{ marginBottom: 10, padding: '6px 8px', background: '#f1f5f9', borderRadius: 7 }}>
-        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, marginBottom: 2 }}>RAINFALL (6h)</div>
+        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, marginBottom: 2 }}>{t('map.rainfall6h')}</div>
         <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
-          {s.rainfall?.valueMm != null ? `${s.rainfall.valueMm.toFixed(1)} mm` : 'No data'}
+          {s.rainfall?.valueMm != null ? `${s.rainfall.valueMm.toFixed(1)} mm` : t('map.noData')}
         </div>
       </div>
 
-      {/* Footer */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <span style={{
@@ -300,30 +239,23 @@ function DetailPopup({ s }) {
             display: 'inline-block',
           }} />
           <span style={{ fontSize: 11, fontWeight: 600, color: s.status === 'OFFLINE' ? '#94a3b8' : '#22c55e' }}>
-            {s.status}
+            {t(`risk.${s.status}`)}
           </span>
         </div>
-        <span style={{ fontSize: 10, color: '#94a3b8' }}>Updated {freshness}</span>
+        <span style={{ fontSize: 10, color: '#94a3b8' }}>{t('map.updated', { time: freshness })}</span>
       </div>
 
       {s.risk === 'CRITICAL' && (
-        <div style={{
-          marginTop: 8, padding: '5px 8px', background: '#fef2f2', borderRadius: 6,
-          border: '1px solid #fecaca', fontSize: 11, color: '#dc2626', fontWeight: 600,
-        }}>
-          CRITICAL — Flood risk high. Take precautions.
+        <div style={{ marginTop: 8, padding: '5px 8px', background: '#fef2f2', borderRadius: 6, border: '1px solid #fecaca', fontSize: 11, color: '#dc2626', fontWeight: 600 }}>
+          {t('map.criticalMsg')}
         </div>
       )}
       {s.risk === 'WARNING' && (
-        <div style={{
-          marginTop: 8, padding: '5px 8px', background: '#fff7ed', borderRadius: 6,
-          border: '1px solid #fed7aa', fontSize: 11, color: '#c2410c', fontWeight: 600,
-        }}>
-          WARNING — Water levels elevated.
+        <div style={{ marginTop: 8, padding: '5px 8px', background: '#fff7ed', borderRadius: 6, border: '1px solid #fed7aa', fontSize: 11, color: '#c2410c', fontWeight: 600 }}>
+          {t('map.warningMsg')}
         </div>
       )}
 
-      {/* Subscribe */}
       {!showSubscribe ? (
         <button
           onClick={() => setShowSubscribe(true)}
@@ -333,21 +265,17 @@ function DetailPopup({ s }) {
             color: '#0ea5e9', fontSize: 12, fontWeight: 700, cursor: 'pointer',
           }}
         >
-          🔔 Get Alerts for this Station
+          {t('map.getAlertsBtn')}
         </button>
       ) : (
-        <SubscribeForm
-          stationId={s.id}
-          stationName={s.name}
-          onClose={() => setShowSubscribe(false)}
-        />
+        <SubscribeForm stationId={s.id} stationName={s.name} onClose={() => setShowSubscribe(false)} />
       )}
     </div>
   );
 }
 
-// ── Stats bar ─────────────────────────────────────────────────────────────────
 function StatsBar({ stations, updatedAt, onRefresh, loading }) {
+  const { t } = useTranslation();
   const counts = { NORMAL: 0, WATCH: 0, WARNING: 0, CRITICAL: 0 };
   stations.forEach((s) => { counts[s.risk] = (counts[s.risk] ?? 0) + 1; });
   const total = stations.length;
@@ -362,8 +290,8 @@ function StatsBar({ stations, updatedAt, onRefresh, loading }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ fontSize: 18 }}>🌊</span>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Nepal Flood Early Warning</div>
-          <div style={{ fontSize: 10, color: '#475569' }}>{total} stations monitored</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>{t('map.nepalFlood')}</div>
+          <div style={{ fontSize: 10, color: '#475569' }}>{t('map.stationsMonitored', { count: total })}</div>
         </div>
       </div>
 
@@ -376,7 +304,7 @@ function StatsBar({ stations, updatedAt, onRefresh, loading }) {
             display: 'flex', alignItems: 'center', gap: 5,
           }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: RISK_COLOR[risk].hex, display: 'inline-block' }} />
-            {n} {RISK_COLOR[risk].label}
+            {n} {t(RISK_COLOR[risk].labelKey)}
           </div>
         ))}
       </div>
@@ -384,7 +312,7 @@ function StatsBar({ stations, updatedAt, onRefresh, loading }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
         {updatedAt && (
           <span style={{ fontSize: 10, color: '#475569' }}>
-            {loading ? 'Refreshing…' : `Updated ${new Date(updatedAt).toLocaleTimeString()}`}
+            {loading ? t('map.refreshing') : t('map.updated', { time: new Date(updatedAt).toLocaleTimeString() })}
           </span>
         )}
         <button onClick={onRefresh} style={{
@@ -392,15 +320,15 @@ function StatsBar({ stations, updatedAt, onRefresh, loading }) {
           color: '#00d4ff', borderRadius: 6, padding: '4px 12px', fontSize: 11,
           cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
         }}>
-          Refresh
+          {t('map.refresh')}
         </button>
       </div>
     </div>
   );
 }
 
-// ── Legend ────────────────────────────────────────────────────────────────────
 function Legend() {
+  const { t } = useTranslation();
   return (
     <div style={{
       position: 'absolute', bottom: 24, right: 10, zIndex: 1000,
@@ -408,24 +336,45 @@ function Legend() {
       border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px',
     }}>
       <div style={{ fontSize: 9.5, fontWeight: 700, color: '#475569', marginBottom: 7, textTransform: 'uppercase', letterSpacing: 1 }}>
-        Risk Level
+        {t('map.riskLevel')}
       </div>
       {Object.entries(RISK_COLOR).map(([key, rc]) => (
         <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
           <span style={{ width: 9, height: 9, borderRadius: 2, background: rc.hex, display: 'inline-block', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, color: '#cbd5e1' }}>{rc.label}</span>
+          <span style={{ fontSize: 11, color: '#cbd5e1' }}>{t(rc.labelKey)}</span>
         </div>
       ))}
     </div>
   );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────────
+function visibleAtZoom(zoom) {
+  if (zoom <= 7) return ['CRITICAL'];
+  if (zoom <= 9) return ['WARNING', 'CRITICAL'];
+  return ['NORMAL', 'WATCH', 'WARNING', 'CRITICAL'];
+}
+
+function ZoomTracker({ onZoom }) {
+  useMapEvents({ zoomend: (e) => onZoom(e.target.getZoom()) });
+  return null;
+}
+
 export default function PublicMapPage() {
   const [stations, setStations] = useState([]);
   const [updatedAt, setUpdatedAt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [zoom, setZoom] = useState(7);
+  const { t, i18n } = useTranslation();
+
+  // Build risk label map for DivIcons (they render outside React so need plain strings)
+  const riskLabels = {
+    NORMAL: t('risk.NORMAL'),
+    WATCH: t('risk.WATCH'),
+    WARNING: t('risk.WARNING'),
+    CRITICAL: t('risk.CRITICAL'),
+    OFFLINE: t('risk.OFFLINE'),
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -447,13 +396,16 @@ export default function PublicMapPage() {
     return () => clearInterval(id);
   }, [fetchData]);
 
-  const mappable = stations.filter((s) => s.latitude != null && s.longitude != null);
+  // Re-render markers when language changes
+  const langKey = i18n.language;
+
+  const allowed   = visibleAtZoom(zoom);
+  const mappable  = stations.filter((s) => s.latitude != null && s.longitude != null && allowed.includes(s.risk ?? 'NORMAL'));
   const noCoords  = stations.filter((s) => s.latitude == null);
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative', background: '#0f172a', fontFamily: 'DM Sans, sans-serif' }}>
       <MapNav />
-      {/* Stats bar below nav */}
       <div style={{ position: 'absolute', top: 48, left: 0, right: 0, zIndex: 1000 }}>
         <StatsBar stations={stations} updatedAt={updatedAt} onRefresh={fetchData} loading={loading} />
       </div>
@@ -464,11 +416,10 @@ export default function PublicMapPage() {
           zIndex: 1001, background: '#1f0303', border: '1px solid #ef4444',
           color: '#ef4444', borderRadius: 8, padding: '6px 16px', fontSize: 12,
         }}>
-          API error: {error}
+          {t('map.apiError', { msg: error })}
         </div>
       )}
 
-      {/* Full-screen map */}
       <MapContainer
         center={[28.3949, 84.124]}
         zoom={7}
@@ -480,8 +431,13 @@ export default function PublicMapPage() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        <ZoomTracker onZoom={setZoom} />
         {mappable.map((s) => (
-          <Marker key={s.id} position={[s.latitude, s.longitude]} icon={makeIcon(s)}>
+          <Marker
+            key={`${s.id}-${langKey}`}
+            position={[s.latitude, s.longitude]}
+            icon={makeIcon(s, riskLabels)}
+          >
             <Popup maxWidth={260} minWidth={230}>
               <DetailPopup s={s} />
             </Popup>
@@ -489,10 +445,8 @@ export default function PublicMapPage() {
         ))}
       </MapContainer>
 
-      {/* Legend */}
       <Legend />
 
-      {/* Stations without coordinates */}
       {noCoords.length > 0 && (
         <div style={{
           position: 'absolute', bottom: 24, left: 10, zIndex: 1000,
@@ -501,7 +455,7 @@ export default function PublicMapPage() {
           padding: '10px 14px', maxWidth: 200,
         }}>
           <div style={{ fontSize: 9.5, fontWeight: 700, color: '#475569', marginBottom: 7, textTransform: 'uppercase', letterSpacing: 1 }}>
-            No GPS Set
+            {t('map.noGps')}
           </div>
           {noCoords.map((s) => (
             <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>

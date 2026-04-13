@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { useTranslation } from 'react-i18next';
 import { Droplets, AlertCircle } from 'lucide-react';
+import LanguageToggle from '../components/LanguageToggle.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,8 +33,12 @@ export default function LoginPage() {
       background: 'var(--bg)',
       backgroundImage: 'radial-gradient(ellipse 60% 50% at 50% 0%, #00d4ff0a 0%, transparent 70%)',
     }}>
+      {/* Language toggle — top right */}
+      <div style={{ position: 'fixed', top: 16, right: 20 }}>
+        <LanguageToggle variant="dark" />
+      </div>
+
       <div style={{ width: '100%', maxWidth: 380, padding: '0 20px' }}>
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 40 }}>
           <div style={{
             width: 52, height: 52, borderRadius: 14,
@@ -44,13 +51,13 @@ export default function LoginPage() {
             FloodWatch
           </div>
           <div style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4 }}>
-            Flood Early Warning System
+            {t('login.subtitle')}
           </div>
         </div>
 
         <div className="card" style={{ padding: 28 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 22, color: 'var(--text)' }}>
-            Sign in to your account
+            {t('login.title')}
           </h2>
 
           {error && (
@@ -67,7 +74,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div>
-              <label className="label">Email</label>
+              <label className="label">{t('login.emailLabel')}</label>
               <input
                 className="input"
                 type="email"
@@ -78,7 +85,7 @@ export default function LoginPage() {
               />
             </div>
             <div>
-              <label className="label">Password</label>
+              <label className="label">{t('login.passwordLabel')}</label>
               <input
                 className="input"
                 type="password"
@@ -94,13 +101,13 @@ export default function LoginPage() {
               disabled={loading}
               style={{ width: '100%', justifyContent: 'center', marginTop: 6, padding: '10px' }}
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? t('login.signingIn') : t('login.signIn')}
             </button>
           </form>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 20, color: 'var(--text-muted)', fontSize: 12 }}>
-          FloodWatch v1.0 · Delft-FEWS Inspired Architecture
+          {t('login.footer')}
         </div>
       </div>
     </div>
