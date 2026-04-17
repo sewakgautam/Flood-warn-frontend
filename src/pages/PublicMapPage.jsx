@@ -134,6 +134,9 @@ function riskOf(s) {
   return RISK_COLOR[s.risk] ?? RISK_COLOR.NORMAL;
 }
 
+const TREND_ARROW = { RISING: '↑', FALLING: '↓', STEADY: '→' };
+const TREND_COLOR = { RISING: '#ef4444', FALLING: '#22c55e', STEADY: '#94a3b8' };
+
 function makeIcon(station, riskLabels) {
   const rc = riskOf(station);
   const level = station.riverLevel?.levelM;
@@ -141,6 +144,9 @@ function makeIcon(station, riskLabels) {
   const isOffline = station.status === 'OFFLINE';
   const isCritical = station.risk === 'CRITICAL';
   const label = isOffline ? (riskLabels['OFFLINE'] ?? 'Offline') : (riskLabels[station.risk] ?? rc.labelKey);
+
+  const trendArrow = station.trend ? TREND_ARROW[station.trend] ?? '' : '';
+  const trendColor = station.trend ? TREND_COLOR[station.trend] ?? '#94a3b8' : rc.hex;
 
   const pulse = isCritical
     ? `<span style="position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:${rc.hex};opacity:0.5;animation:pulse 1.4s infinite;"></span>`
@@ -150,7 +156,10 @@ function makeIcon(station, riskLabels) {
     <div style="position:relative;font-family:'DM Sans','Space Mono',monospace;user-select:none;">
       ${pulse}
       <div style="background:${rc.bg};border:2px solid ${rc.hex};border-radius:10px 10px 10px 2px;padding:5px 9px 4px;min-width:82px;box-shadow:0 2px 12px rgba(0,0,0,0.55);backdrop-filter:blur(4px);">
-        <div style="font-size:15px;font-weight:700;color:${rc.hex};letter-spacing:-0.3px;line-height:1;margin-bottom:3px;">${levelText}</div>
+        <div style="display:flex;align-items:baseline;gap:4px;">
+          <div style="font-size:15px;font-weight:700;color:${rc.hex};letter-spacing:-0.3px;line-height:1;margin-bottom:3px;">${levelText}</div>
+          ${trendArrow ? `<span style="font-size:13px;font-weight:700;color:${trendColor};line-height:1;">${trendArrow}</span>` : ''}
+        </div>
         <div style="font-size:9.5px;color:rgba(255,255,255,0.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96px;line-height:1.1;margin-bottom:3px;">${station.name}</div>
         <div style="display:flex;align-items:center;gap:4px;">
           <span style="width:6px;height:6px;border-radius:50%;background:${isOffline ? '#64748b' : rc.hex};flex-shrink:0;display:inline-block;"></span>
@@ -232,15 +241,26 @@ function DetailPopup({ s }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 6, borderTop: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          <span style={{
-            width: 7, height: 7, borderRadius: '50%',
-            background: s.status === 'OFFLINE' ? '#94a3b8' : '#22c55e',
-            display: 'inline-block',
-          }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: s.status === 'OFFLINE' ? '#94a3b8' : '#22c55e' }}>
-            {t(`risk.${s.status}`)}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{
+              width: 7, height: 7, borderRadius: '50%',
+              background: s.status === 'OFFLINE' ? '#94a3b8' : '#22c55e',
+              display: 'inline-block',
+            }} />
+            <span style={{ fontSize: 11, fontWeight: 600, color: s.status === 'OFFLINE' ? '#94a3b8' : '#22c55e' }}>
+              {t(`risk.${s.status}`)}
+            </span>
+          </div>
+          {s.trend && (
+            <span style={{
+              fontSize: 11, fontWeight: 700,
+              color: TREND_COLOR[s.trend] ?? '#94a3b8',
+              display: 'flex', alignItems: 'center', gap: 2,
+            }}>
+              {TREND_ARROW[s.trend]} {t(`map.trend.${s.trend}`)}
+            </span>
+          )}
         </div>
         <span style={{ fontSize: 10, color: '#94a3b8' }}>{t('map.updated', { time: freshness })}</span>
       </div>
